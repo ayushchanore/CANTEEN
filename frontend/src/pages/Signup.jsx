@@ -97,7 +97,7 @@ export const Signup = () => {
             name="name"
             value={formData.name}
             onChange={handleInputChange}
-            placeholder="John Doe"
+            placeholder="Enter your Name"
             error={errors.name}
             required
           />
