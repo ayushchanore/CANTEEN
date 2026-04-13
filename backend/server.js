@@ -1,15 +1,8 @@
-// server.js
-// Main server file
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/database');
 
-// Connect to database
-connectDB();
-
-// Initialize express
 const app = express();
 
 // Middleware
@@ -17,6 +10,12 @@ app.use(cors());
 app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Connect DB on every request (serverless safe)
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -27,7 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is running' });
 });

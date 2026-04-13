@@ -3,15 +3,21 @@
 
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
+let isConnected = false;
+
+const connectDB = async () => {  
+  if (isConnected) {
+    return;
+  }
+
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/college-canteen';
-    await mongoose.connect(mongoURI);
+    const db = await mongoose.connect(mongoURI);
+    isConnected = db.connections[0].readyState === 1;
     console.log('MongoDB connected successfully');
-    return true;
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
-    process.exit(1);
+    throw error;
   }
 };
 
