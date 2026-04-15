@@ -3,6 +3,8 @@
 
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
+const User = require('../models/User');
+const { sendOrderReadyEmail } = require('../utils/sendEmail');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // @route   GET /api/orders/user
@@ -283,6 +285,23 @@ exports.updateOrderStatus = async (req, res) => {
 
     order.status = status;
     await order.save();
+
+    // Send email when status is Completed
+    if (status === 'Completed') {
+      try {
+        const user = await User.findById(order.userId);
+        if (user) {
+          await sendOrderReadyEmail(
+            user.email,
+            user.name,
+            order.items,
+            order.totalAmount
+          );
+        }
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError.message);
+      }
+    }
 
     res.status(200).json({
       success: true,
