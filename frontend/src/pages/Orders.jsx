@@ -15,7 +15,11 @@ export const Orders = () => {
       try {
         setLoading(true);
         const response = await orderAPI.getUserOrders();
-        setOrders(response.data.orders || []);
+        // Filter out delivered orders
+        const activeOrders = (response.data.orders || []).filter(
+          (order) => order.status !== 'Delivered'
+        );
+        setOrders(activeOrders);
       } catch (error) {
         toast.error('Failed to load orders');
         console.error(error);
