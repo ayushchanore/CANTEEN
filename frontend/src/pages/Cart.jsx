@@ -1,25 +1,47 @@
 // src/pages/Cart.jsx
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
 import { CartItem, LoadingSpinner } from '../components';
 import { formatPrice } from '../utils/helpers';
-import { orderAPI } from '../utils/api';
+import { orderAPI, authAPI } from '../utils/api';
 import { Input, TextArea } from '../components';
 import toast from 'react-hot-toast';
 
 export const Cart = () => {
   const { cart, getTotalPrice, clearCart } = useContext(CartContext);
+  const { userToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [userProfile, setUserProfile] = useState(null);
   const [formData, setFormData] = useState({
     deliveryAddress: '',
     phoneNumber: '',
     notes: '',
   });
   const [errors, setErrors] = useState({});
+
+  // Fetch user profile to pre-fill form
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await authAPI.getUserProfile();
+        const profile = response.data.user;
+        setUserProfile(profile);
+        setFormData((prev) => ({
+          ...prev,
+          phoneNumber: profile.phone || '',
+          deliveryAddress: profile.address || '',
+        }));
+      } catch (error) {
+        console.error('Failed to fetch profile');
+      }
+    };
+    if (userToken) fetchProfile();
+  }, [userToken]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -78,6 +100,8 @@ export const Cart = () => {
         },
         prefill: {
           contact: formData.phoneNumber,
+          email: userProfile?.email || '',
+          name: userProfile?.name || '',
         },
         theme: {
           color: '#FF6B35',
@@ -195,6 +219,15 @@ export const Cart = () => {
             ) : (
               <div className="space-y-4">
                 <h3 className="font-bold text-lg">Delivery Details</h3>
+
+                {/* User Info Display */}
+                {userProfile && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-orange-700 mb-1">👤 Ordering as</p>
+                    <p className="text-sm text-gray-700">📧 {userProfile.email}</p>
+                    {userProfile.phone && <p className="text-sm text-gray-700">📱 {userProfile.phone}</p>}
+                  </div>
+                )}
                 <Input
                   label="Phone Number"
                   name="phoneNumber"
