@@ -8,6 +8,13 @@ import { formatPrice } from '../utils/helpers';
 import { orderAPI, authAPI } from '../utils/api';
 import { Input, TextArea } from '../components';
 import toast from 'react-hot-toast';
+import {
+  FaShoppingCart, FaMapMarkerAlt, FaPhone, FaStickyNote,
+  FaCreditCard, FaMoneyBillWave, FaUser, FaEnvelope,
+  FaArrowRight, FaBoxOpen, FaCheckCircle, FaStore
+} from 'react-icons/fa';
+import { MdPayment } from 'react-icons/md';
+import { SiRazorpay } from 'react-icons/si';
 
 export const Cart = () => {
   const { cart, getTotalPrice, clearCart } = useContext(CartContext);
@@ -153,14 +160,16 @@ export const Cart = () => {
       <div className="min-h-screen bg-gray-50 py-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center py-20">
-            <div className="text-6xl mb-4">🛒</div>
+            <div className="bg-orange-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FaShoppingCart size={40} className="text-orange-400" />
+            </div>
             <h1 className="text-4xl font-bold mb-4">Your Cart is Empty</h1>
             <p className="text-gray-600 text-lg mb-8">Start adding some delicious items to your cart!</p>
             <button
               onClick={() => navigate('/menu')}
-              className="bg-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-opacity-90 transition"
+              className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transform transition flex items-center gap-2 mx-auto"
             >
-              Continue Shopping
+              <FaStore /> Browse Menu
             </button>
           </div>
         </div>
@@ -171,7 +180,9 @@ export const Cart = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-8">🛒 Shopping Cart</h1>
+        <h1 className="text-4xl font-bold mb-8 flex items-center gap-3">
+          <FaShoppingCart className="text-orange-500" /> Shopping Cart
+        </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -223,9 +234,17 @@ export const Cart = () => {
                 {/* User Info Display */}
                 {userProfile && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                    <p className="text-sm font-semibold text-orange-700 mb-1">👤 Ordering as</p>
-                    <p className="text-sm text-gray-700">📧 {userProfile.email}</p>
-                    {userProfile.phone && <p className="text-sm text-gray-700">📱 {userProfile.phone}</p>}
+                    <p className="text-sm font-semibold text-orange-700 mb-2 flex items-center gap-2">
+                      <FaUser size={12} /> Ordering as
+                    </p>
+                    <p className="text-sm text-gray-700 flex items-center gap-2">
+                      <FaEnvelope size={12} className="text-orange-400" /> {userProfile.email}
+                    </p>
+                    {userProfile.phone && (
+                      <p className="text-sm text-gray-700 flex items-center gap-2 mt-1">
+                        <FaPhone size={12} className="text-orange-400" /> {userProfile.phone}
+                      </p>
+                    )}
                   </div>
                 )}
                 <Input
@@ -255,32 +274,21 @@ export const Cart = () => {
                   rows={3}
                 />
 
-                {/* Payment Method */}
-                <h3 className="font-bold text-lg">Payment Method</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <MdPayment className="text-orange-500" size={20} /> Payment Method
+                </h3>
                 <div className="space-y-2">
                   <label className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${paymentMethod === 'razorpay' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
-                    <input
-                      type="radio"
-                      value="razorpay"
-                      checked={paymentMethod === 'razorpay'}
-                      onChange={() => setPaymentMethod('razorpay')}
-                      className="accent-orange-500"
-                    />
-                    <span className="text-2xl">💳</span>
+                    <input type="radio" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} className="accent-orange-500" />
+                    <SiRazorpay size={22} className="text-blue-600" />
                     <div>
                       <p className="font-semibold">Pay Online</p>
                       <p className="text-xs text-gray-500">UPI, Cards, Net Banking</p>
                     </div>
                   </label>
                   <label className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${paymentMethod === 'cod' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
-                    <input
-                      type="radio"
-                      value="cod"
-                      checked={paymentMethod === 'cod'}
-                      onChange={() => setPaymentMethod('cod')}
-                      className="accent-orange-500"
-                    />
-                    <span className="text-2xl">💵</span>
+                    <input type="radio" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="accent-orange-500" />
+                    <FaMoneyBillWave size={22} className="text-green-600" />
                     <div>
                       <p className="font-semibold">Cash on Delivery</p>
                       <p className="text-xs text-gray-500">Pay at the counter</p>
@@ -293,7 +301,7 @@ export const Cart = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {loading ? <LoadingSpinner size="sm" /> : paymentMethod === 'razorpay' ? '💳 Pay Now' : '📦 Place Order'}
+                  {loading ? <LoadingSpinner size="sm" /> : paymentMethod === 'razorpay' ? <><FaCreditCard /> Pay Now</> : <><FaCheckCircle /> Place Order</>}
                 </button>
               </div>
             )}
