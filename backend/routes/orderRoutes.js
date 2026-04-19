@@ -8,18 +8,19 @@ const {
   getAllOrders,
   getOrderDetails,
   createOrder,
-  createCheckoutSession,
-  completePayment,
+  createRazorpayOrder,
+  verifyPayment,
   updateOrderStatus,
   cancelOrder,
 } = require('../controllers/orderController');
+
 const { protectUser, protectAdmin } = require('../middleware/auth');
 
 // User routes
 router.get('/user', protectUser, getUserOrders);
 router.post('/', protectUser, createOrder);
-router.post('/create-checkout-session', protectUser, createCheckoutSession);
-router.post('/complete-payment', protectUser, completePayment);
+router.post('/razorpay-order', protectUser, createRazorpayOrder);
+router.post('/verify-payment', protectUser, verifyPayment);
 router.delete('/:id', protectUser, cancelOrder);
 
 // Admin routes

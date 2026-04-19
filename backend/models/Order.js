@@ -47,6 +47,12 @@ const orderSchema = new mongoose.Schema(
     stripePaymentIntentId: {
       type: String,
     },
+    razorpayOrderId: {
+      type: String,
+    },
+    razorpayPaymentId: {
+      type: String,
+    },
     deliveryAddress: {
       type: String,
       required: true,

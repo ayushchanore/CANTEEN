@@ -69,8 +69,8 @@ export const orderAPI = {
   getAllOrders: (status) => api.get(`/orders/admin/all${status ? `?status=${status}` : ''}`),
   getOrder: (id) => api.get(`/orders/${id}`),
   createOrder: (data) => api.post('/orders', data),
-  createCheckoutSession: (data) => api.post('/orders/create-checkout-session', data),
-  completePayment: (data) => api.post('/orders/complete-payment', data),
+  createRazorpayOrder: (data) => api.post('/orders/razorpay-order', data),
+  verifyPayment: (data) => api.post('/orders/verify-payment', data),
   updateOrderStatus: (id, data) => api.put(`/orders/${id}/status`, data),
   cancelOrder: (id) => api.delete(`/orders/${id}`),
 };

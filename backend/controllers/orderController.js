@@ -5,7 +5,13 @@ const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const { sendOrderReadyEmail } = require('../utils/sendEmail');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // @route   GET /api/orders/user
 // @desc    Get user orders
@@ -127,104 +133,26 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// @route   POST /api/orders/create-checkout-session
-// @desc    Create Stripe checkout session
+// @route   POST /api/orders/razorpay-order
+// @desc    Create Razorpay order
 // @access  Private
-exports.createCheckoutSession = async (req, res) => {
+exports.createRazorpayOrder = async (req, res) => {
   try {
     const { items, deliveryAddress, phoneNumber, notes } = req.body;
 
-    if (!items || items.length === 0) {
+    if (!items || items.length === 0)
       return res.status(400).json({ success: false, message: 'Cart is empty' });
-    }
-
-    if (!deliveryAddress || !phoneNumber) {
+    if (!deliveryAddress || !phoneNumber)
       return res.status(400).json({ success: false, message: 'Delivery address and phone number required' });
-    }
 
-    // Check if Stripe is configured
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return res.status(500).json({ success: false, message: 'Stripe is not configured. Please add STRIPE_SECRET_KEY to .env file' });
-    }
-
-    // Calculate total
-    let totalAmount = 0;
-    const lineItems = [];
-
-    for (const item of items) {
-      const menuItem = await MenuItem.findById(item.menuItemId);
-
-      if (!menuItem) {
-        return res.status(404).json({ success: false, message: `Menu item ${item.menuItemId} not found` });
-      }
-
-      totalAmount += menuItem.price * item.quantity;
-
-      lineItems.push({
-        price_data: {
-          currency: 'inr',
-          product_data: {
-            name: menuItem.name,
-            description: menuItem.description,
-          },
-          unit_amount: Math.round(menuItem.price * 100), // Convert to paise
-        },
-        quantity: item.quantity,
-      });
-    }
-
-    // Create Stripe session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: `${process.env.FRONTEND_URL}/order-success?sessionId={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/cart`,
-      metadata: {
-        userId: req.user.id,
-        deliveryAddress,
-        phoneNumber,
-        notes: notes || '',
-      },
-    });
-
-    res.status(200).json({
-      success: true,
-      sessionId: session.id,
-      sessionUrl: session.url,
-    });
-  } catch (error) {
-    console.error('Stripe checkout error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// @route   POST /api/orders/complete-payment
-// @desc    Complete payment and create order
-// @access  Private
-exports.completePayment = async (req, res) => {
-  try {
-    const { sessionId, items, deliveryAddress, phoneNumber, notes } = req.body;
-
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-    if (session.payment_status !== 'paid') {
-      return res.status(400).json({ success: false, message: 'Payment not completed' });
-    }
-
-    // Calculate total
     let totalAmount = 0;
     const orderItems = [];
 
     for (const item of items) {
       const menuItem = await MenuItem.findById(item.menuItemId);
-
-      if (!menuItem) {
-        return res.status(404).json({ success: false, message: `Menu item ${item.menuItemId} not found` });
-      }
-
+      if (!menuItem)
+        return res.status(404).json({ success: false, message: 'Menu item not found' });
       totalAmount += menuItem.price * item.quantity;
-
       orderItems.push({
         menuItemId: menuItem._id,
         name: menuItem.name,
@@ -233,24 +161,69 @@ exports.completePayment = async (req, res) => {
       });
     }
 
-    // Create order
+    const razorpayOrder = await razorpay.orders.create({
+      amount: Math.round(totalAmount * 100), // paise
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`,
+    });
+
+    res.status(200).json({
+      success: true,
+      razorpayOrderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      orderItems,
+      totalAmount,
+      deliveryAddress,
+      phoneNumber,
+      notes,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @route   POST /api/orders/verify-payment
+// @desc    Verify Razorpay payment and create order
+// @access  Private
+exports.verifyPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderItems,
+      totalAmount,
+      deliveryAddress,
+      phoneNumber,
+      notes,
+    } = req.body;
+
+    // Verify signature
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature)
+      return res.status(400).json({ success: false, message: 'Payment verification failed' });
+
+    // Create order in DB
     const order = await Order.create({
       userId: req.user.id,
       items: orderItems,
       totalAmount,
-      stripeSessionId: sessionId,
       paymentStatus: 'Completed',
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
       deliveryAddress,
       phoneNumber,
       notes,
-      estimatedDeliveryTime: new Date(Date.now() + 30 * 60000), // 30 minutes from now
+      estimatedDeliveryTime: new Date(Date.now() + 30 * 60000),
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Order created successfully',
-      order,
-    });
+    res.status(201).json({ success: true, message: 'Payment verified and order placed', order });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
