@@ -108,7 +108,7 @@ export const Signup = () => {
             name="email"
             value={formData.email}
             onChange={handleInputChange}
-            placeholder="you@example.com"
+            placeholder="user@gmail.com"
             error={errors.email}
             required
           />
