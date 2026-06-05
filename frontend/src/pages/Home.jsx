@@ -63,7 +63,7 @@ export const Home = () => {
 
         <div className="relative max-w-7xl mx-auto px-4 py-24 md:py-40 text-center">
           <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 text-sm font-semibold">
-            🍽️ KDK College Canteen
+            🍽️ KDK College Smart Canteen
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold mb-6 drop-shadow-lg leading-tight">
             Delicious Food,<br />
