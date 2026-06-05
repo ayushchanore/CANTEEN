@@ -83,7 +83,7 @@ export const Home = () => {
               to="/signup"
               className="border-2 border-white text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-orange-600 transition duration-300"
             >
-              ✨ Sign Up Free
+              ✨ Sign Up 
             </Link>
           </div>
 
@@ -109,7 +109,7 @@ export const Home = () => {
           Why Choose Us?
         </h2>
         <p className="text-center text-gray-500 mb-12 text-base md:text-lg">
-          Experience the best food ordering service on campus
+          Experience the best food and quick ordering service on campus
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-10">
           {features.map((feature) => (
